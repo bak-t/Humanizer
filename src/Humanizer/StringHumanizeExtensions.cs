@@ -10,40 +10,39 @@ namespace Humanizer
         static readonly Func<string, string> FromUnderscoreDashSeparatedWords = methodName => string.Join(" ", methodName.Split(new[] { '_', '-' }));
         static string FromPascalCase(string name)
         {
-            var chars = name.Aggregate(
-                new List<char>(),
-                (list, currentChar) =>
+            var list = new List<char>();
+            foreach (var currentChar in name)
+            {
+                if (currentChar == ' ')
                 {
-                    if (currentChar == ' ')
-                    {
-                        list.Add(currentChar);
-                        return list;
-                    }
+                    list.Add(currentChar);
+                    continue;
+                }
 
-                    if (list.Count == 0)
-                    {
-                        list.Add(currentChar);
-                        return list;
-                    }
+                if (list.Count == 0)
+                {
+                    list.Add(currentChar);
+                    continue;
+                }
 
-                    var lastCharacterInTheList = list[list.Count - 1];
-                    if (lastCharacterInTheList != ' ')
+                var lastCharacterInTheList = list[list.Count - 1];
+                if (lastCharacterInTheList != ' ')
+                {
+                    if (char.IsDigit(lastCharacterInTheList))
                     {
-                        if (char.IsDigit(lastCharacterInTheList))
-                        {
-                            if (char.IsLetter(currentChar))
-                                list.Add(' ');
-                        }
-                        else if (!char.IsLower(currentChar))
+                        if (char.IsLetter(currentChar))
                             list.Add(' ');
                     }
+                    else if (!char.IsLower(currentChar))
+                    {
+                        list.Add(' ');
+                    }
+                }
 
-                    list.Add(char.ToLower(currentChar));
+                list.Add(char.ToLower(currentChar));
+            }
 
-                    return list;
-                });
-
-            var result = new string(chars.ToArray());
+            var result = new string(list.ToArray());
             return result.Replace(" i ", " I "); // I is an exception
         }
 

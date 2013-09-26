@@ -65,11 +65,27 @@ namespace Humanizer.Tests.Extensions
         }
 
         [Fact]
-        public void AcronymsAreSeparatedFromOtherWords()
+        public void AcronymsAreSeparatedFromOtherWordsInTheMiddle()
         {
             Assert.Equal(
-                "The HTML Language",
+                "The HTML language",
                 "TheHTMLLanguage".Humanize());
+        }
+
+        [Fact]
+        public void AcronymsAreSeparatedFromOtherWordsInTheStart()
+        {
+            Assert.Equal(
+                "HTML is the language",
+                "HTMLIsTheLanguage".Humanize());
+        }
+
+        [Fact]
+        public void AcronymsAreSeparatedFromOtherWordsInTheEnd()
+        {
+            Assert.Equal(
+                "The language is HTML",
+                "TheLanguageIsHTML".Humanize());
         }
 
         [Fact]

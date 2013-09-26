@@ -2,47 +2,61 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace Humanizer
 {
     public static class StringHumanizeExtensions
     {
         static readonly Func<string, string> FromUnderscoreDashSeparatedWords = methodName => string.Join(" ", methodName.Split(new[] { '_', '-' }));
+
         static string FromPascalCase(string name)
         {
-            var list = new List<char>();
+            var resultBuilder = new StringBuilder();
+            var wordBuilder = new StringBuilder();
+
+            Func<StringBuilder, Func<char, bool>, bool>
+                lastCharOf = (builder, charPredicate) =>
+                    builder.Length > 0 && charPredicate(builder[builder.Length - 1]);
+            Func<Func<char, bool>, bool>
+                lastCharOfCurrentWord = isOfCharClass =>
+                    lastCharOf(wordBuilder, isOfCharClass);
+            Action appendSpaceToResult = () =>
+            {
+                if (lastCharOf(resultBuilder, _ => _ != ' '))
+                {
+                    resultBuilder.Append(' ');
+                }
+            };
+
             foreach (var currentChar in name)
             {
-                if (currentChar == ' ')
+                if (lastCharOfCurrentWord(char.IsLower)
+                    && (char.IsUpper(currentChar) || char.IsDigit(currentChar)))
                 {
-                    list.Add(currentChar);
-                    continue;
+                    appendSpaceToResult();
+                    resultBuilder.Append(wordBuilder);
+                    // new word
+                    wordBuilder.Clear();
                 }
-
-                if (list.Count == 0)
+                else if (lastCharOfCurrentWord(char.IsUpper)
+                    && char.IsLower(currentChar))
                 {
-                    list.Add(currentChar);
-                    continue;
+                    appendSpaceToResult();
+                    resultBuilder.Append(wordBuilder.ToString(0, wordBuilder.Length - 1));
+                    // new word
+                    var firstCharOfNewWord = wordBuilder[wordBuilder.Length - 1];
+                    wordBuilder.Clear();
+                    wordBuilder
+                        .Append(firstCharOfNewWord);
                 }
-
-                var lastCharacterInTheList = list[list.Count - 1];
-                if (lastCharacterInTheList != ' ')
-                {
-                    if (char.IsDigit(lastCharacterInTheList))
-                    {
-                        if (char.IsLetter(currentChar))
-                            list.Add(' ');
-                    }
-                    else if (!char.IsLower(currentChar))
-                    {
-                        list.Add(' ');
-                    }
-                }
-
-                list.Add(char.ToLower(currentChar));
+                wordBuilder.Append(currentChar);
             }
+            appendSpaceToResult();
+            resultBuilder.Append(wordBuilder);
 
-            var result = new string(list.ToArray());
+            var result = resultBuilder[0] +
+                resultBuilder.ToString(1, resultBuilder.Length - 1).ToLower();
             return result.Replace(" i ", " I "); // I is an exception
         }
 

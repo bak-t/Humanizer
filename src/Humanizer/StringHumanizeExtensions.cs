@@ -28,6 +28,17 @@ namespace Humanizer
                     resultBuilder.Append(' ');
                 }
             };
+            Action<string> appendWordToResult = word =>
+            {
+                if (word.All(char.IsUpper) && word.Length>1)
+                {
+                    resultBuilder.Append(word);
+                }
+                else
+                {
+                    resultBuilder.Append(word.ToLower());
+                }
+            };
 
             foreach (var currentChar in name)
             {
@@ -35,7 +46,7 @@ namespace Humanizer
                     && (char.IsUpper(currentChar) || char.IsDigit(currentChar)))
                 {
                     appendSpaceToResult();
-                    resultBuilder.Append(wordBuilder);
+                    appendWordToResult(wordBuilder.ToString());
                     // new word
                     wordBuilder.Clear();
                 }
@@ -43,7 +54,7 @@ namespace Humanizer
                     && char.IsLower(currentChar))
                 {
                     appendSpaceToResult();
-                    resultBuilder.Append(wordBuilder.ToString(0, wordBuilder.Length - 1));
+                    appendWordToResult(wordBuilder.ToString(0, wordBuilder.Length - 1));
                     // new word
                     var firstCharOfNewWord = wordBuilder[wordBuilder.Length - 1];
                     wordBuilder.Clear();
@@ -53,10 +64,12 @@ namespace Humanizer
                 wordBuilder.Append(currentChar);
             }
             appendSpaceToResult();
-            resultBuilder.Append(wordBuilder);
+            appendWordToResult(wordBuilder.ToString());
 
-            var result = resultBuilder[0] +
-                resultBuilder.ToString(1, resultBuilder.Length - 1).ToLower();
+            /*var result = resultBuilder[0] +
+                resultBuilder.ToString(1, resultBuilder.Length - 1).ToLower();*/
+            var result = char.ToUpper(resultBuilder[0]) +
+                resultBuilder.ToString(1, resultBuilder.Length - 1);
             return result.Replace(" i ", " I "); // I is an exception
         }
 

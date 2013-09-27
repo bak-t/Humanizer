@@ -89,6 +89,14 @@ namespace Humanizer.Tests.Extensions
         }
 
         [Fact]
+        public void AcronymsAreSeparatedFromNumbers()
+        {
+            Assert.Equal(
+                "HTML 5",
+                "HTML5".Humanize());
+        }
+
+        [Fact]
         public void CanHumanizeIntoTitleCaseWithoutUsingUnderscores()
         {
             Assert.Equal(

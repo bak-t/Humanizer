@@ -89,11 +89,19 @@ namespace Humanizer.Tests.Extensions
         }
 
         [Fact]
-        public void AcronymsAreSeparatedFromNumbers()
+        public void AcronymsAreSeparatedFromNumbersInTheEnd()
         {
             Assert.Equal(
                 "HTML 5",
                 "HTML5".Humanize());
+        }
+
+        [Fact]
+        public void AcronymsAreSeparatedFromNumbersInTheStart()
+        {
+            Assert.Equal(
+                "1 HTML",
+                "1HTML".Humanize());
         }
 
         [Fact]

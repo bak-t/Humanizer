@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Humanizer
 {
@@ -10,66 +9,29 @@ namespace Humanizer
     {
         static readonly Func<string, string> FromUnderscoreDashSeparatedWords = methodName => string.Join(" ", methodName.Split(new[] { '_', '-' }));
 
+        static readonly Regex PascalCaseWordBoundaryRegex = new Regex(@"
+(?# word to word, number or acronym)
+(?<=[a-z])(?=[A-Z0-9])|
+(?# number to word or acronym)
+(?<=[0-9])(?=[A-Za-z])|
+(?# acronym to number)
+(?<=[A-Z])(?=[0-9])|
+(?# acronym to word)
+(?<=[A-Z])(?=[A-Z][a-z])
+", RegexOptions.IgnorePatternWhitespace|RegexOptions.Compiled);
+
         static string FromPascalCase(string name)
         {
-            var resultBuilder = new StringBuilder();
-            var wordBuilder = new StringBuilder();
+            var result = PascalCaseWordBoundaryRegex
+                .Split(name)
+                .Select(word =>
+                    word.All(Char.IsUpper) && word.Length > 1
+                        ? word
+                        : word.ToLower())
+                .Aggregate((res, word) => res + " " + word);
 
-            Func<StringBuilder, Func<char, bool>, bool>
-                lastCharOf = (builder, charPredicate) =>
-                    builder.Length > 0 && charPredicate(builder[builder.Length - 1]);
-            Func<Func<char, bool>, bool>
-                lastCharOfCurrentWord = isOfCharClass =>
-                    lastCharOf(wordBuilder, isOfCharClass);
-            Action appendSpaceToResult = () =>
-            {
-                if (lastCharOf(resultBuilder, _ => _ != ' '))
-                {
-                    resultBuilder.Append(' ');
-                }
-            };
-            Action<string> appendWordToResult = word =>
-            {
-                if (word.All(char.IsUpper) && word.Length>1)
-                {
-                    resultBuilder.Append(word);
-                }
-                else
-                {
-                    resultBuilder.Append(word.ToLower());
-                }
-            };
-
-            foreach (var currentChar in name)
-            {
-                if (lastCharOfCurrentWord(char.IsLower)
-                    && (char.IsUpper(currentChar) || char.IsDigit(currentChar)))
-                {
-                    appendSpaceToResult();
-                    appendWordToResult(wordBuilder.ToString());
-                    // new word
-                    wordBuilder.Clear();
-                }
-                else if (lastCharOfCurrentWord(char.IsUpper)
-                    && char.IsLower(currentChar))
-                {
-                    appendSpaceToResult();
-                    appendWordToResult(wordBuilder.ToString(0, wordBuilder.Length - 1));
-                    // new word
-                    var firstCharOfNewWord = wordBuilder[wordBuilder.Length - 1];
-                    wordBuilder.Clear();
-                    wordBuilder
-                        .Append(firstCharOfNewWord);
-                }
-                wordBuilder.Append(currentChar);
-            }
-            appendSpaceToResult();
-            appendWordToResult(wordBuilder.ToString());
-
-            /*var result = resultBuilder[0] +
-                resultBuilder.ToString(1, resultBuilder.Length - 1).ToLower();*/
-            var result = char.ToUpper(resultBuilder[0]) +
-                resultBuilder.ToString(1, resultBuilder.Length - 1);
+            result = Char.ToUpper(result[0]) +
+                result.Substring(1, result.Length - 1);
             return result.Replace(" i ", " I "); // I is an exception
         }
 
@@ -81,7 +43,7 @@ namespace Humanizer
         public static string Humanize(this string input)
         {
             // if input is all capitals (e.g. an acronym) then return it without change
-            if (!input.Any(Char.IsLower))
+            if (input.All(Char.IsUpper))
                 return input;
 
             if (input.Contains('_') || input.Contains('-'))
